@@ -1,0 +1,65 @@
+pragma solidity > 0.7.0 ;
+
+
+contract Voting {
+
+    mapping (address => bool) private voted ;
+    mapping (uint => uint ) private votes ;
+    mapping (uint => string) condidates ;
+    uint  totalVotes = 0; 
+    uint strtingTime = block.timestamp ;
+
+    constructor(){       
+    // name of condidates  
+        condidates[0] = "condidate1" ;
+        condidates[1] = "condidate2" ;
+        condidates[2] = "condidate3" ;
+    }
+
+    //checks that this voter have been voted or not .. every address can vote onlyonce
+    modifier onlyOnce(){
+        require (!voted[msg.sender] ,"You have been voted !! ") ;
+        _;
+    }
+
+    //checks voting period :
+    modifier inTime(uint _finishTime) {
+        require( strtingTime <= block.timestamp && block.timestamp <= _finishTime) ;
+        _;
+    }
+
+    //checks voting time have finished or not 
+    modifier onlyAfter(uint _finishTime) {
+        require(_finishTime  <= block.timestamp , " Voting is not finished yet ! ");
+        _;
+    }
+
+    // vote function 
+    function vote(uint id) external  onlyOnce() inTime(strtingTime + 3 days){
+        votes[id] +=1 ;
+        voted[msg.sender] = true ;
+        totalVotes += 1 ;
+    }
+
+    // kowning winner after voting period have finished
+    function WhoIsWinner () external onlyAfter(strtingTime + 3 days) view returns(string memory , string memory , string memory ){
+        uint greater ;
+        for(uint i=0 ; i < totalVotes ; i++){
+            if(votes[i] > votes[greater]){
+                greater = i ;
+            }
+        }
+        return ("condidate ",condidates[greater] , "is winner !") ;
+    }
+
+    //knowing the amount of each condidate's vote 
+    function getVotes(uint _id) external view onlyAfter(strtingTime + 3 days) returns(uint){
+        return votes[_id] ;
+    } 
+
+    //get the total vote until there
+    function getTotalVotes() external view returns(uint) {
+        return totalVotes ;
+    }
+
+}
