@@ -1,0 +1,69 @@
+pragma solidity > 0.7.0 ;
+
+
+contract Auction {
+
+  
+    uint private lastId ;
+    address payable public winner ;
+    mapping( uint => Stuffs) stuffs ;
+
+     struct  Stuffs {
+        address payable owner ;
+        address  payable  buyer ;
+        string stuff ;
+        uint id ;
+        uint highestBid ;
+        uint creationTime ;
+    }
+
+    modifier onlyAfter(uint _time , uint _id){
+        require(stuffs[_id].creationTime < _time , " Not yet !  ") ;
+        _;
+    }
+
+    fallback() external {}
+
+  
+    
+   
+    function makeAuction(string memory _stuff_name ) public returns(string memory) {
+        
+                stuffs[lastId].id = uint(keccak256(abi.encodePacked(block.timestamp ,block.difficulty , msg.sender ))) % 500000000000000 ; 
+                stuffs[lastId].owner = payable(msg.sender) ;
+                stuffs[lastId].stuff = _stuff_name ;
+                stuffs[lastId].creationTime = block.timestamp ;
+                lastId ++ ;             
+                return "done ! " ;
+    }
+
+
+    function putBids (uint _id , uint _amount ) public  returns (string memory) {
+
+       if(stuffs[_id].owner.balance > _amount){
+           if(_amount > stuffs[_id].highestBid){
+              stuffs[_id].buyer = payable(msg.sender) ;
+              stuffs[_id].highestBid = _amount ;
+              return "You put a bid ! " ;
+        }else {
+            revert ("higher bid exist !! ");
+        }
+       }else {
+           revert("Not enough Ether ! ");
+       } 
+        
+    }
+
+    function getstuffe(uint _id) public view returns(string memory) {
+        return stuffs[_id].stuff ;
+    } 
+
+    // In this part we disposit the money to owner , and the buyer (auction winner ) would be the owner .  
+    function sell(uint _id) public payable returns(string memory) {
+        winner = stuffs[_id].buyer ;
+        stuffs[_id].owner.transfer(stuffs[_id].highestBid) ;
+        stuffs[_id].owner = stuffs[_id].buyer ;      
+        return " Done !" ;  
+    }
+
+}
