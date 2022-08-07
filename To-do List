@@ -1,0 +1,31 @@
+pragma solidity >= 0.7.0 ;
+
+contract ToDoList {
+
+    struct Task {
+        string task ;
+        bool isDone ;
+    }
+
+    mapping (address => Task[]) private user ;
+
+    function makeTask (string memory _task) external {
+        user[msg.sender].push(Task({
+            task:_task ,
+            isDone:false 
+        }));
+    }
+
+    function getTask(uint _index) external view returns (Task memory){
+
+        return user[msg.sender][_index] ;
+    }
+
+    function updateStatus(uint _index) external {
+        user[msg.sender][_index].isDone = !user[msg.sender][_index].isDone ;
+    }
+
+    function deleteTask(uint _index) external payable{
+        delete user[msg.sender][_index] ;
+    }
+}
