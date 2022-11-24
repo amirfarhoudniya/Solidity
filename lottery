@@ -1,0 +1,91 @@
+pragma solidity > 0.7.0 ;
+
+
+contract lottery {
+
+/***********************************************************************************************/
+    uint tiketPrice = 0.01 ether ;
+    address payable private bucketWallet ;
+    uint private bucket ;
+    mapping (address => bool) private buyer ;
+    mapping(uint => address) private findBuyers;
+    uint private buyerCounter  = 0 ;
+    uint private startTime ;
+    address payable winner ;
+    bool private onlyOnce = false ;
+    bool private onlyOnce2 = false ;
+
+    constructor() {
+        bucketWallet = payable(msg.sender) ;
+        startTime = block.timestamp ;
+    }
+/***********************************************************************************************/
+    modifier onlyOwner(){
+        require(msg.sender == bucketWallet , "only owner can strat spining !") ;
+        _;
+    }
+
+    modifier checkBalance() {
+        require(msg.sender.balance > tiketPrice , "inafficant balance ") ;
+        _;
+    }
+
+    modifier haveTicket(){
+        require(!buyer[msg.sender] , "already you have a ticket !") ;
+        _; 
+    }
+
+    modifier onlyAfter(uint _time) {
+        require(_time > startTime + 1 minutes ) ;
+        _;
+    }
+
+/***********************************************************************************************/
+
+    function buyTicket() public payable checkBalance() haveTicket(){    
+            bucketWallet.transfer(tiketPrice) ;
+            findBuyers[buyerCounter] = msg.sender ;
+            bucket = bucket + 0.01 ether ;
+            buyer[msg.sender] = true ;
+            buyerCounter ++ ;
+        
+    }
+
+    function status() public view returns(string memory){
+        if(buyer[msg.sender]){
+            return "You have a ticket !" ;
+        }else {
+            return "You don't have ticket !" ;
+        }
+    }
+
+    function getBucket() public view returns(uint) {
+        return bucket;
+    }
+
+    function getBuyers() public view returns(uint) {
+        return buyerCounter;
+    }
+
+    function spin() internal onlyOwner() returns(address){   
+       uint _num = uint(keccak256(abi.encodePacked(block.difficulty, block.timestamp)))  % buyerCounter ;
+       return findBuyers[_num] ; 
+    }
+    
+    function WhoIsWinner() public onlyOwner() returns(address) {
+        require(!onlyOnce , "Winner has discovered !") ;
+        winner = payable(spin()) ;
+        onlyOnce = true ;
+        return winner ;
+    }
+   
+    function payToWinner() public payable returns(string memory){
+        require(msg.sender == winner , "You are not the winner .. maybe next time :) ") ;
+        require(!onlyOnce2 , "You have been payed ! ") ;
+        winner.transfer(bucket) ;
+        onlyOnce2 = true ;
+        return "Done ! ";
+    }
+
+
+}
